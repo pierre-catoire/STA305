@@ -1,0 +1,170 @@
+---
+title: "STA301"
+author: "Pierre Catoire"
+date: "03/12/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+set.seed(305)
+```
+
+## Projet STA 305
+
+```{r}
+library(bayesmeta)
+library(metafor)
+library(rjags)
+library(HDInterval)
+data(CrinsEtAl2014)
+dfex = data.frame(CrinsEtAl2014)
+```
+
+On considère le tableau suivant :
+
+|             | Event | No Event    | Total   |
+|-------------|-------|-------------|---------|
+| Exposed     | ai    | n1i-ai = bi | n1i     |
+| Non exposed | ci    | n2i-ci = di | n2i     |
+| Total       | ai+ci | bi+di       | n1i+n2i |
+
+```{r}
+crins.es = escalc(measure = "OR",
+                  ai = exp.AR.events,
+                  n1i = exp.total,
+                  ci = cont.AR.events,
+                  n2i = cont.total,
+                  slab = publication,
+                  data = dfex)
+
+crins.es = crins.es[, c("publication", "yi", "vi")]
+```
+
+
+```{r}
+res_crins_bayesmeta = bayesmeta(y = crins.es$yi,
+                                sigma = sqrt(crins.es$vi),
+                                labels = crins.es$publication,
+                                tau.prior = function(t) {
+                                    dunif(t, max = 4)
+                                    },
+                                mu.prior = c(0, 4),
+                                interval.type = "central")
+summary(res_crins_bayesmeta)
+
+plot(res_crins_bayesmeta)
+```
+
+```{r}
+plot(res_crins_bayesmeta)
+```
+
+### Ecrire le modèle :
+
+- Loi d'échantillonnage :
+$$
+log(OR_i) \sim \mathcal{N}(\theta_i,\sigma^2_i) \\
+
+\theta_i \sim \mathcal{N}(\mu,\tau^2)
+$$
+
+- a priori :
+
+$$
+\mu \sim \mathcal{N}(0,4^2) \\
+\tau \sim \mathcal{U}_{[0;4]}
+$$
+
+On décrit le modèle en JAGS.
+
+```{r}
+#Définition du modèle
+crins_jags_res = jags.model(file = "model.txt",
+                            data = list(logOR = crins.es$yi,
+                                        sigma = sqrt(crins.es$vi),
+                                        N = length(crins.es$yi)),
+                            n.chains = 3)
+
+#Estimation du modèle
+res_crins_jags_res = coda.samples(model = crins_jags_res,
+                                  variable.names = c("mu",
+                                                     "tau"),
+                                  n.iter = 20000)
+
+#Exclusion de la phase de chauffe
+res_crins_jags_res = window(res_crins_jags_res, start = 5001)
+
+summary(res_crins_jags_res)
+plot(res_crins_jags_res)
+hdi(res_crins_jags_res)
+```
+
+## Application au TP
+
+```{r}
+df = read.csv("dataaxfors.csv")
+df = df[!is.na(df$GROUP) & !is.na(df$TREATMENTDEATH),]
+df.pubs.hcq = df[df$GROUP=="AP",]
+df.nopubs.hcq = df[df$GROUP=="ANP",]
+df.hcq = df[df$GROUP=="AP" | df$GROUP == "ANP",]
+df.cq = df[df$GROUP=="B",]
+```
+
+
+### Analyse via package bayesmeta
+
+```{r}
+hp=list(maxtau = 1000,
+        varmu = 1000)
+
+custom.bayesmeta = function(data,hyperprior,measure="OR"){
+  es = escalc(measure = measure,
+              ai = TREATMENTDEATH,
+              n1i = TREATMENTTOT,
+              ci = CONTROLDEATH,
+              n2i = CONTROLTOT,
+              slab = PUBRID,
+              data = data)
+  
+  es = es[,c("PUBRID","yi","vi")]
+  
+  result = bayesmeta(y = es$yi,
+                         sigma = sqrt(es$vi),
+                         labels = es$PUBRID,
+                         tau.prior = function(t) {
+                           dunif(t, max = hyperprior$maxtau)
+                           },
+                         mu.prior = c(0, hyperprior$varmu),
+                         interval.type = "central")
+  
+  return(result)
+}
+
+res.pubs.hcq = custom.bayesmeta(df.pubs.hcq,hp) #Hydroxychloroquine, essais publiés seuls
+res.nopubs.hcq = custom.bayesmeta(df.nopubs.hcq,hp) #Hydroxychloroquine, essais non publiés seuls
+res.all.hcq = custom.bayesmeta(df.hcq,hp) #Hydroxychloroquine, ensemble des essais
+res.cq = custom.bayesmeta(df.cq,hp) #Chloroquine, ensemble des essais
+```
+
+### Analyse de sensibilité :
+
+- Hyperpriors
+- OR correction
+
+### Analyse en sous-groupes :
+
+- Dose HCQ : 
+  - > 1600 mg J1 et > 800 mg J2 vs autres
+  
+```{r}
+df.lowdose.pubs.hcq = df[df$GROUP =="AP" & df$DOSECLASS == "LD",]
+df.highdose.pubs.hcq = df[df$GROUP =="AP" & df$DOSECLASS == "HD",]
+df.lowdose.all.hcq = df[df$DOSECLASS == "LD",]
+df.highdose.all.hcq = df[df$DOSECLASS == "HD",]
+
+res.hd.pubs.hcq = custom.bayesmeta(df.highdose.pubs.hcq,hp) #Hydroxychloroquine à dose forte, essais publiés seuls
+res.ld.pubs.hcq = custom.bayesmeta(df.lowdose.pubs.hcq,hp) #Hydroxychloroquine à dose modérée, essais publiés seuls
+res.hd.all.hcq = custom.bayesmeta(df.highdose.all.hcq,hp) #Hydroxychloroquine à dose forte, ensemble des études
+res.ld.all.hcq = custom.bayesmeta(df.lowdose.all.hcq,hp) #Hydroxychloroquine à dose modérée, ensemble des études
+```
