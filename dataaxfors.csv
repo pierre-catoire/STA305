@@ -1,0 +1,35 @@
+NAME,PUBRID,SETTING,TREATMENT,NTREATMENT,CONTROL,NCONTROL,DOSE,DOSECLASS,COVIDSTATUS,AGE,DEATHPERCENT,LOCATION,BLINDING,TARGETN,TREATMENTDEATH,TREATMENTTOT,CONTROLDEATH,CONTROLTOT,GROUP,COMPLETION
+REMAP-CAP,NCT02735707,ICU,HCQ,61,NO,81,"800 mg at 0 and 6 h, then 800 mg/day for up to 6 days",HD,CS,18,27.46,INT,NA,NA,17,61,22,81,ANP,CNP
+,ChiCTR2000029559,Inpatient,HCQ,31,NO,31,200 mg twice a day for 5 days,LD,C,18,0,CH,NA,300,0,31,0,31,AP,CP
+,ChiCTR2000029868,Inpatient,HCQ,75,NO,75,"1200 mg/day for 3 days, then 800 mg/day for 11–18 days",HD,C,18,0,CH,NA,360,0,75,0,75,AP,CP
+,NCT04261517,Inpatient,HCQ,15,NO,15,400 mg/day for 5 days,LD,C,18,0,CH,NA,30,0,15,0,15,AP,CP
+RECOVERY,NCT04381936,Inpatient,HCQ,1561,NO,3155,"800 mg at 0 h, then 800 mg after 6 h, then 800 mg/day for up to 9 days",HD,CS,18,25.67,EU,NA,12000,421,1561,790,3155,AP,CP
+,ChiCTR2000030054,Inpatient,HCQ,18,NO,12,400 mg/day for 10 days,LD,C,18,0,CH,NA,100,0,18,0,12,AP,CP
+NO COVID-19,NCT04316377,Inpatient,HCQ,27,NO,26,800 mg/day for 7 days,LD,C,18,3.77,NW,NA,202,1,27,1,26,AP,HP
+,NCT04384380,Inpatient,HCQ,21,NO,12,"800 mg/day for 1 day, then 400 mg/day for 6 days",LD,C,20,0,TW,NA,45,0,21,0,12,AP,CP
+,NCT04353336,Inpatient,HCQ,97,NO,97,"800 mg/day for 1 day, then 400 mg/day for 14 days",LD,C,0,5.67,EG,NA,40,6,97,5,97,AP,RP
+COALITION I,NCT04322123,Inpatient,HCQ,221,NO,227,800 mg/day for 7 days,LD,CS,18,2.9,AMERICA,NA,630,7,221,6,227,AP,CP
+TEACH,NCT04369742,Inpatient,HCQ,67,PLACEBO,61,"800 mg/day for 1 day, then 400 mg/day for 4 days",LD,C,12,10.16,US,NA,626,7,67,6,61,AP,TP
+,NCT04491994,Inpatient,HCQ,349,NO,151,"400 mg twice a day for 1 day, then 200 mg twice a day for 4 days",LD,C,18,0,PAK,NA,540,0,349,0,151,AP,CP
+WHO SOLIDARITY,2020-001366-11,Inpatient,HCQ,947,NO,906,"Day 1, 2000 mg (hour 0, 800 mg; hour 6, 800 mg; hour 12, 400 mg), thereafter 800 mg per day for 10 days",HD,C,18,10.15,INT,NA,10000,104,947,84,906,AP,TP
+PATCH,NCT04329923,Inpatient,HCQ,15,PLACEBO,15,800 mg/day for up to 14 days ,LD,C,40,0,US,NA,400,0,15,0,15,ANP,RNP
+CCAP-1,NCT04345289,Inpatient,HCQ,1,PLACEBO,1,600 mg/day for 7 days ,LD,C,18,0,DEN,NA,1500,0,1,0,1,ANP,RNP
+,NCT04335552-A,Inpatient,HCQ,4,NO,2,"800 mg/day for 1 day, then 600 mg/day for 4 days",LD,C,12,16.67,US,NA,500,1,4,0,2,ANP,TNP
+,NCT04335552-B,Inpatient,HCQAZ,2,AZ,3,"800 mg/day for 1 day, then 600 mg/day for 4 days",LD,C,12,60,US,NA,500,1,2,2,3,ANP,TNP
+ARCHAIC-A,NL8490,Inpatient,HCQ,4,NO,3,"800 mg/day for 1 day, then 400 mg/day for 4 days",LD,C,18,28.57,NETH,NA,950,2,4,0,3,ANP,RNP
+HYDRA,NCT04315896,Inpatient,HCQ,75,PLACEBO,77,400 mg/day for 10 days ,LD,C,18,37.5,MEX,NA,500,28,75,29,77,ANP,RNP
+PROTECT-A,NCT04338698-A,Inpatient,HCQAZO,64,AZO,64,600 mg/day for 5 days ,LD,C,18,0,PAK,NA,500,0,62,1,63,ANP,RNP
+PROTECT-B,NCT04338698-B,Inpatient,HCQO,62,O,63,600 mg/day for 5 days ,LD,C,18,0.8,PAK,NA,500,1,59,2,61,ANP,RNP
+PROTECT-C,NCT04338698-C,Inpatient,HCQAZ,59,AZ,61,600 mg/day for 5 days ,LD,C,18,2.5,PAK,NA,500,0,64,0,64,ANP,RNP
+OAHU-COVID19,NCT04345692,Inpatient,HCQ,10,NO,6,"800 mg/day on day 1, then 400 mg/day for 4 days",LD,C,18,12.5,US,NA,350,2,10,0,6,ANP,RNP
+HYCOVID,NCT04325893,Inpatient,HCQ,124,PLACEBO,123,"800 mg on day 1, then 400 mg/ day for 8 days",LD,C,18,6.88,FR,NA,1300,6,124,11,123,ANP,TNP
+COV-HCQ,NCT04342221,Inpatient,HCQ,13,PLACEBO,14,800 mg/day for day 1 and 600 mg/day for days 2–7,LD,C,18,3.7,GER,NA,220,1,13,0,14,ANP,RNP
+COVID-PEP,NCT04308668,Outpatient,HCQ,224,PLACEBO,247,"800 mg at 0 h, then 600 mg after 6–8 h, then 600 mg daily for 4 days",LD,CS,18,0.41,INT,NA,3000,1,244,1,247,AP,CP
+BCP PEP Cov-2 Study,NCT04304053,Outpatient,HCQ,136,NO,157,"800 mg on day 1, and 400 mg on days 2–7",LD,C,18,0,SP,NA,2300,0,136,0,157,AP,CP
+,NCT04333654,Outpatient,HCQ,5,PLACEBO,3,"800 mg at 0 h, then 400 mg 6–8 h later, then 600 mg/day for 9 days",LD,C,18,0,INT,NA,210,0,5,0,3,ANP,TNP
+COMIHY,NCT04340544,Outpatient,HCQ,8,PLACEBO,8,600 mg/d for 7 days,LD,C,18,0,GER,NA,2700,0,8,0,8,ANP,RNP
+,ChiCTR2000030054,Inpatient,CQ,18,NO,12,"1000 mg/day for 1 day, then 500 mg/day for 9 days",LD,C,18,0,CH,NA,100,0,18,0,12,B,CP
+ARCHAIC-B,NL8490,Inpatient,CQ,5,NO,3,"600 mg at 0 h, then 300 mg after 12 h, then 600 mg/day for 4 days",LD,C,18,12.5,NETH,NA,950,1,5,0,3,B,TNP
+CloroCOVID19II-A,NCT04342650,Outpatient,CQ,78,PLACEBO,74,"900 mg/day for 1 day, then 450 mg/day for 4 days",LD,S,18,0,BRA,NA,210,0,78,0,74,B,CNP
+CloroCOVID19II-B,NCT04323527,Inpatient,CQ,41,PLACEBO,41,"900 mg/day for 1 day, then 450 mg/day for 4 days",LD,S,18,35.37,BRA,NA,278,17,41,12,41,B,CNP
+,ChiCTR2000031204,Inpatient,CQ,18,PLACEBO,17,"1000 mg on day 1, then 500 mg/ day on days 2–3, then 250 mg/ day until≤14 days of total treatment",LD,C,18,0,CH,NA,300,0,18,0,17,B,RNP
