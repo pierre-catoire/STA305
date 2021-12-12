@@ -1,5 +1,5 @@
 ---
-title: "STA301"
+title: "STA305"
 author: "Pierre Catoire"
 date: "03/12/2021"
 output: html_document
@@ -17,87 +17,6 @@ library(bayesmeta)
 library(metafor)
 library(rjags)
 library(HDInterval)
-data(CrinsEtAl2014)
-dfex = data.frame(CrinsEtAl2014)
-```
-
-On considère le tableau suivant :
-
-|             | Event | No Event    | Total   |
-|-------------|-------|-------------|---------|
-| Exposed     | ai    | n1i-ai = bi | n1i     |
-| Non exposed | ci    | n2i-ci = di | n2i     |
-| Total       | ai+ci | bi+di       | n1i+n2i |
-
-```{r}
-crins.es = escalc(measure = "OR",
-                  ai = exp.AR.events,
-                  n1i = exp.total,
-                  ci = cont.AR.events,
-                  n2i = cont.total,
-                  slab = publication,
-                  data = dfex)
-
-crins.es = crins.es[, c("publication", "yi", "vi")]
-```
-
-
-```{r}
-res_crins_bayesmeta = bayesmeta(y = crins.es$yi,
-                                sigma = sqrt(crins.es$vi),
-                                labels = crins.es$publication,
-                                tau.prior = function(t) {
-                                    dunif(t, max = 4)
-                                    },
-                                mu.prior = c(0, 4),
-                                interval.type = "central")
-summary(res_crins_bayesmeta)
-
-plot(res_crins_bayesmeta)
-```
-
-```{r}
-plot(res_crins_bayesmeta)
-```
-
-### Ecrire le modèle :
-
-- Loi d'échantillonnage :
-$$
-log(OR_i) \sim \mathcal{N}(\theta_i,\sigma^2_i) \\
-
-\theta_i \sim \mathcal{N}(\mu,\tau^2)
-$$
-
-- a priori :
-
-$$
-\mu \sim \mathcal{N}(0,4^2) \\
-\tau \sim \mathcal{U}_{[0;4]}
-$$
-
-On décrit le modèle en JAGS.
-
-```{r}
-#Définition du modèle
-crins_jags_res = jags.model(file = "model.txt",
-                            data = list(logOR = crins.es$yi,
-                                        sigma = sqrt(crins.es$vi),
-                                        N = length(crins.es$yi)),
-                            n.chains = 3)
-
-#Estimation du modèle
-res_crins_jags_res = coda.samples(model = crins_jags_res,
-                                  variable.names = c("mu",
-                                                     "tau"),
-                                  n.iter = 20000)
-
-#Exclusion de la phase de chauffe
-res_crins_jags_res = window(res_crins_jags_res, start = 5001)
-
-summary(res_crins_jags_res)
-plot(res_crins_jags_res)
-hdi(res_crins_jags_res)
 ```
 
 ## Application au TP
