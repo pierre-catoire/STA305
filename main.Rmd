@@ -1,89 +1,475 @@
 ---
-title: "STA305"
-author: "Pierre Catoire"
-date: "03/12/2021"
-output: html_document
+title: "Méta-analyse bayésienne de l'effet de l'hydroxychloroquine sur la mortaité au cours du COVID-1"
+author: "Fourmond M, Mukakalisa C, Catoire P"
+date: "13/12/2021"
+output: beamer_presentation
+theme : "Boadilla"
+bibliography : sta305.bib
+header-includes: 
+  - \usepackage{tikz}
+  - \usetikzlibrary{positioning, arrows}
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-set.seed(305)
-```
-
-## Projet STA 305
-
-```{r}
-library(bayesmeta)
+```{r packages include=F}
+#Packages
 library(metafor)
 library(rjags)
 library(HDInterval)
+library(coda)
 ```
 
-## Application au TP
-
-```{r}
+```{r dataframes include = F}
+#Import des données
 df = read.csv("dataaxfors.csv")
-df = df[!is.na(df$GROUP) & !is.na(df$TREATMENTDEATH),]
 df.pubs.hcq = df[df$GROUP=="AP",]
 df.nopubs.hcq = df[df$GROUP=="ANP",]
 df.hcq = df[df$GROUP=="AP" | df$GROUP == "ANP",]
-df.cq = df[df$GROUP=="B",]
+df.highdose.all.hcq = df[df$DOSECLASS=="HD",]
+df.lowdose.all.hcq = df[df$DOSECLASS=="LD",]
 ```
 
+```{r custom functions include = F}
+#Création de fonctions personnalisées
 
-### Analyse via package bayesmeta
-
-```{r}
-hp=list(maxtau = 1000,
-        varmu = 1000)
-
-custom.bayesmeta = function(data,hyperprior,measure="OR"){
+#Création d'un modèle JAGS pour chaque jeu de données
+custom.jagsmodel = function(data,model="model.txt",nchains=3,measure="OR"){
+  
+  #Calcul des tailles d'effet
   es = escalc(measure = measure,
               ai = TREATMENTDEATH,
               n1i = TREATMENTTOT,
               ci = CONTROLDEATH,
               n2i = CONTROLTOT,
-              slab = PUBRID,
               data = data)
   
-  es = es[,c("PUBRID","yi","vi")]
-  
-  result = bayesmeta(y = es$yi,
-                         sigma = sqrt(es$vi),
-                         labels = es$PUBRID,
-                         tau.prior = function(t) {
-                           dunif(t, max = hyperprior$maxtau)
-                           },
-                         mu.prior = c(0, hyperprior$varmu),
-                         interval.type = "central")
-  
-  return(result)
+  #Création du modèle JAGS
+  result=jags.model(file = model,
+                    data = list(logOR = es$yi,
+                                sigma = sqrt(es$vi),
+                                N = length(es$yi)),
+                    n.chains = 3)
 }
 
-res.pubs.hcq = custom.bayesmeta(df.pubs.hcq,hp) #Hydroxychloroquine, essais publiés seuls
-res.nopubs.hcq = custom.bayesmeta(df.nopubs.hcq,hp) #Hydroxychloroquine, essais non publiés seuls
-res.all.hcq = custom.bayesmeta(df.hcq,hp) #Hydroxychloroquine, ensemble des essais
-res.cq = custom.bayesmeta(df.cq,hp) #Chloroquine, ensemble des essais
+#Création d'une fonction donnant la p-direction
+custom.pdir = function(sample,value,way = "sup"){
+  a = sum(sample > value)
+  b = length(sample)
+  if(way=="sup"){
+    resp = a/b
+    return(resp)
+  } else if(way=="inf"){
+    resp = (b-a)/b
+    return(resp)
+  } else{
+    warning("Error : way not defined, use \"sup\" or \"inf\"")
+  }
+}
 ```
 
-### Analyse de sensibilité :
+# Contexte
 
-- Hyperpriors
-- OR correction
+- COVID-19 : 270M cas, 5.31M décès
+- Pandémie mondiale d'après l'OMS
+- pas de traitement curatif établi
+- Hydroxychloroquine proposée par plusieurs auteurs
 
-### Analyse en sous-groupes :
+# Hydroxychloroquine
 
-- Dose HCQ : 
-  - > 1600 mg J1 et > 800 mg J2 vs autres
-  
-```{r}
-df.lowdose.pubs.hcq = df[df$GROUP =="AP" & df$DOSECLASS == "LD",]
-df.highdose.pubs.hcq = df[df$GROUP =="AP" & df$DOSECLASS == "HD",]
-df.lowdose.all.hcq = df[df$DOSECLASS == "LD",]
-df.highdose.all.hcq = df[df$DOSECLASS == "HD",]
+- Agent antiparasitaire, ayant été proposé dans certaines infections virales (Zika, Chikungunya ...)
+- Dissensus concernant son efficacité sur le COVID-19
+- Biais de publication marqué
+- Nécessité de synthèse de preuves, en particulier méta-analyse
 
-res.hd.pubs.hcq = custom.bayesmeta(df.highdose.pubs.hcq,hp) #Hydroxychloroquine à dose forte, essais publiés seuls
-res.ld.pubs.hcq = custom.bayesmeta(df.lowdose.pubs.hcq,hp) #Hydroxychloroquine à dose modérée, essais publiés seuls
-res.hd.all.hcq = custom.bayesmeta(df.highdose.all.hcq,hp) #Hydroxychloroquine à dose forte, ensemble des études
-res.ld.all.hcq = custom.bayesmeta(df.lowdose.all.hcq,hp) #Hydroxychloroquine à dose modérée, ensemble des études
+# Méta-analyse
+
+**Principe : modèle** ***hiérarchique***
+
+## Pour notre question de recherche :
+- @axforsMortalityOutcomesHydroxychloroquine2021 a réalisé une méta-analyse par une approche fréquentiste, avec étude des sous-groupes d'études publiées et non publiées
+
+# Question de recherche
+
+***Les études actuelles (publiées et en cours) montrent-elles un effet de l'hydroxychloroquine (HCQ) sur la mortalité au cours du COVID-19 ?***
+
+# Analyse statistique
+
+## Analyse principale
+
+- Méta-analyse bayésienne à partir des données de @axforsMortalityOutcomesHydroxychloroquine2021.
+- détermination de :
+  - l'effet global (OR) par médiane a posteriori
+  - Intervalle de crédence (méthode de plus haute densité)
+  - p-direction pour OR < 1 et OR < 0.9 (cliniquement pertinent)
+
+## Analyses secondaires
+
+Sous-groupes :
+
+- Etudes publiées vs. non publiées
+- Traitement à forte dose vs. faible dose
+
+Sensibilité :
+
+- Hyperpriors (paramètres de la loi a priori de l'effet global et de sa dispersion)
+- Choix de la distribution a priori du paramètre de dispersion
+
+# Modèle bayésien
+
+- Quantité d'intérêt : $\mu \in \mathbb{R}$, log-odds ratio du décès parmi les patients avec et sans traitement par HCQ
+- Modèle d'échantillonnage :
+
+$$
+\begin{cases}
+  logOR_i \sim \mathcal{N}(\theta_i,\sigma^2_i)\\
+  \theta_i \sim \mathcal{N}(\mu,\sigma^2)
+\end{cases}
+$$
+
+- Priors :
+
+$$
+\begin{cases}
+  \mu \sim \mathcal{N}(0,4)\\
+  \sigma^2 \sim \mathcal{U}(0,4)
+\end{cases}
+$$
+
+# Modèle
+\begin{center}
+\begin{tikzpicture}[on grid, node distance = 2.25 cm, box/.style = { rectangle, color = lightgray, text = black, text width = 2.0cm, align = center}] 
+  	
+	\node [box] (logOR) {\Large $logOR_{i}$};
+	\node [box, above = of logOR,  yshift = -0.2cm] (thetasigma){$\mathcal{N}(\theta_{i}, \sigma^{2}_i)$ \\
+	\includegraphics[scale = 0.25]{Normal.png}} ;
+	\node [box, above = of thetasigma,  yshift = -0.2cm] (musigma){$\mathcal{N}(\theta, \sigma^{2})$ \\
+	\includegraphics[scale = 0.25]{Normal.png}} ;
+	\node [box, above = of musigma,  xshift = 2.7 cm] (unif){$\mathcal{U}$(0,4) \\
+	\includegraphics[scale = 0.25]{Uniform.png} } ;
+	\node [box, above = of musigma,  xshift = -2.7 cm] (norm04){$\mathcal{N}(0,4)$ \\
+	\includegraphics[scale = 0.25]{Normal.png}} ;
+	
+	\draw[-stealth] (thetasigma.south) -- (logOR);
+	\draw[-stealth]  (musigma.south) -- node[right] {$\theta_i$} (thetasigma.north);
+	\draw[-stealth] (unif.south) -- node[right] {$\sigma^2$}(musigma.40);
+	\draw[-stealth] (norm04.south) --  node[right] {$\mu$}(musigma.140);  
+            		
+
+\end{tikzpicture}
+\end{center}
+
+# Approche analytique
+
+On cherche à déterminer $\mathbb{P}(\mu|Y)$, avec $Y$ le vecteur $\begin{pmatrix}Y_1, \ldots,Y_k\end{pmatrix}^T = \begin{pmatrix}logOR_1, \ldots,logOR_k\end{pmatrix}^T$ des log-OR observés.
+
+On a $\mathbb{P}(\mu,\theta|Y) \propto \mathbb{P}(Y | \mu,\theta)\times\mathbb{P}(\theta|\mu)\times\mathbb{P}(\mu)$
+
+D'où 
+
+$$
+\mathbb{P}(\mu|Y) = \int^{\mathbb{R}}\mathbb{P}(\mu,\theta|Y) d\theta \propto \int^{\mathbb{R}}\mathbb{P}(Y | \mu,\theta)\times\mathbb{P}(\theta|\mu)\times\mathbb{P}(\mu) d\theta
+$$
+
+#
+
+avec :
+
+- $\mathbb{P}(Y|\mu,\theta) = \underset{i=1}{\overset{k}{\prod}}\Bigg[\frac{1}{\sqrt{2\pi\sigma_i^2}}e^{-\frac{(Y_i-\theta)^2}{2\sigma_i^2}}\Bigg]$
+- $\mathbb{P}(\mu) = \frac{1}{\sqrt{2\pi}}e^{-\frac{1}{2}\mu^2}$
+- et :
+
+$$
+\mathbb{P}(\theta|\mu) = \mathbb{P}(\mu|\theta)\frac{\mathbb{P}(\theta)}{\mathbb{P}(\mu)}
+$$
+
+$$
+= \frac{\mathbb{P}(\theta)}{\mathbb{P}(\mu)}\int_0^4\mathbb{P}(\mu,\sigma^2|\theta)d\sigma^2
+$$
+
+$$
+= \frac{\mathbb{P}(\theta)}{\mathbb{P}(\mu)}\int_0^4\mathbb{P}(\theta|\mu,\sigma^2)\frac{\mathbb{P}(\mu)\mathbb{P}(\sigma^2)}{\mathbb{P}(\theta)}d\sigma^2
+$$
+
+
+$$
+= \int_0^4\mathbb{P}(\theta|\mu,\sigma^2)\times \mathbb{P}(\sigma^2)d\sigma^2
+$$
+
+# Modèle "naïf"
+
+```{r naive model include = F}
+#Modèle initial
+model.hcq.all.naive = custom.jagsmodel(df.hcq)
+
+res.jags.hcq.all.naive = coda.samples(model = model.hcq.all.naive,
+                                  variable.names = c("mu",
+                                                     "tau"),
+                                  n.iter = 20000)
 ```
+
+```{r plot naive model echo = F}
+plot(res.jags.hcq.all.naive)
+```
+
+# Quantiles courants
+
+```{r cumuplot naive model echo = F}
+cumuplot(res.jags.hcq.all.naive)
+```
+
+# Autocorrélation
+
+```{r autocorrelation naive model echo = F}
+acfplot(res.jags.hcq.all.naive, lag.max=500,ylim=c(-0.1,1))
+```
+
+# Gelman-Rubin
+
+```{r gelman plot echo = F}
+gelman.plot(res.jags.hcq.all.naive)
+```
+
+# Paramétrage du modèle :
+
+- `thin` : 500
+- `burn-in` : 10000
+
+```{r overall model include = F}
+#Analyse pour l'ensemble des articles HCQ
+model.hcq.all = custom.jagsmodel(df.hcq)
+
+res.jags.hcq.all = coda.samples(model = model.hcq.all,
+                                  variable.names = c("mu",
+                                                     "tau"),
+                                  n.iter = 1000000,
+                                thin=500)
+
+#Exclusion de la phase de chauffe
+res.jags.hcq.all = window(res.jags.hcq.all,start = 10001)
+
+```
+
+# Résultats du modèle : ensemble des études
+
+- Médiane a posteriori : `r round(exp(summary(res.jags.hcq.all)[[2]][5]),2)`
+- ICr 95% HDI : [`r round(exp(hdi(res.jags.hcq.all)[1]),2)`;`r round(exp(hdi(res.jags.hcq.all)[2]),2)`]
+- p-direction (OR > 1) : `r round(1-custom.pdir(res.jags.hcq.all[[1]][,1],log(1)),2)`
+- p-direction (OR > 0.9) : `r round(1-custom.pdir(res.jags.hcq.all[[1]][,1],log(0.9)),2)`
+
+# Densités a posteriori
+
+```{r plot overall model echo=FALSE}
+plot(res.jags.hcq.all)
+```
+
+# Convergence
+
+```{r plots convergence overall model echo = F}
+par(mfrow=c(2,2))
+cumuplot(res.jags.hcq.all)
+acfplot(res.jags.hcq.all, lag.max=500,ylim=c(-0.1,1))
+gelman.plot(res.jags.hcq.all)
+```
+
+# Etude en sous-groupes : publiées vs. non publiées
+
+```{r subgroups models pubs include = F}
+#Analyse pour l'ensemble des articles HCQ publiés
+model.hcq.pubs = custom.jagsmodel(df.pubs.hcq)
+
+res.jags.hcq.pubs = coda.samples(model = model.hcq.pubs,
+                                  variable.names = c("mu",
+                                                     "tau"),
+                                  n.iter = 1000000,
+                                 thin = 500)
+
+#Exclusion de la phase de chauffe
+res.jags.hcq.pubs = window(res.jags.hcq.pubs,start = 10001)
+
+#Analyse pour l'ensemble des articles HCQ non publiés
+model.hcq.nopubs = custom.jagsmodel(df.nopubs.hcq)
+res.jags.hcq.nopubs = coda.samples(model = model.hcq.nopubs,
+                                  variable.names = c("mu",
+                                                     "tau"),
+                                  n.iter = 1000000,
+                                 thin = 500)
+
+#Exclusion de la phase de chauffe
+res.jags.hcq.nopubs = window(res.jags.hcq.nopubs,start = 10001)
+```
+
+Groupe "études publiées" (n=`r nrow(df.pubs.hcq)`:
+
+- Médiane a posteriori : `r round(exp(summary(res.jags.hcq.pubs)[[2]][5]),2)`
+- ICr 95% HDI : [`r round(exp(hdi(res.jags.hcq.pubs)[1]),2)`;`r round(exp(hdi(res.jags.hcq.pubs)[2]),2)`]
+- p-direction (OR > 1) : `r round(1-custom.pdir(res.jags.hcq.pubs[[1]][,1],log(1)),2)`
+- p-direction (OR > 0.9) : `r round(1-custom.pdir(res.jags.hcq.pubs[[1]][,1],log(0.9)),2)`
+
+Groupe "études non publiées" (n=`r nrow(df.nopubs.hcq)`:
+
+- Médiane a posteriori : `r round(exp(summary(res.jags.hcq.nopubs)[[2]][5]),2)`
+- ICr 95% HDI : [`r round(exp(hdi(res.jags.hcq.nopubs)[1]),2)`;`r round(exp(hdi(res.jags.hcq.nopubs)[2]),2)`]
+- p-direction (OR > 1) : `r round(1-custom.pdir(res.jags.hcq.nopubs[[1]][,1],log(1)),2)`
+- p-direction (OR > 0.9) : `r round(1-custom.pdir(res.jags.hcq.nopubs[[1]][,1],log(0.9)),2)`
+
+# Sous-groupes : dose d'hydroxychloroquine
+
+```{r subgroups models dose include = F}
+#Analyse pour l'ensemble des articles HCQ forte dose
+model.hcq.highdose = custom.jagsmodel(df.highdose.all.hcq)
+
+res.jags.hcq.highdose = coda.samples(model = model.hcq.highdose,
+                                  variable.names = c("mu",
+                                                     "tau"),
+                                  n.iter = 1000000,
+                                 thin = 500)
+
+#Exclusion de la phase de chauffe
+res.jags.hcq.highdose = window(res.jags.hcq.highdose,start = 10001)
+
+#Analyse pour l'ensemble des articles HCQ faible dose
+model.hcq.lowdose = custom.jagsmodel(df.lowdose.all.hcq)
+res.jags.hcq.lowdose = coda.samples(model = model.hcq.lowdose,
+                                  variable.names = c("mu",
+                                                     "tau"),
+                                  n.iter = 1000000,
+                                 thin = 500)
+
+#Exclusion de la phase de chauffe
+res.jags.hcq.lowdose = window(res.jags.hcq.lowdose,start = 10001)
+```
+
+Groupe "études publiées" (n=`r nrow(df.highdose.all.hcq)`:
+
+- Médiane a posteriori : `r round(exp(summary(res.jags.hcq.highdose)[[2]][5]),2)`
+- ICr 95% HDI : [`r round(exp(hdi(res.jags.hcq.highdose)[1]),2)`;`r round(exp(hdi(res.jags.hcq.highdose)[2]),2)`]
+- p-direction (OR > 1) : `r round(1-custom.pdir(res.jags.hcq.highdose[[1]][,1],log(1)),2)`
+- p-direction (OR > 0.9) : `r round(1-custom.pdir(res.jags.hcq.highdose[[1]][,1],log(0.9)),2)`
+
+Groupe "études non publiées" (n=`r nrow(df.lowdose.all.hcq)`:
+
+- Médiane a posteriori : `r round(exp(summary(res.jags.hcq.lowdose)[[2]][5]),2)`
+- ICr 95% HDI : [`r round(exp(hdi(res.jags.hcq.lowdose)[1]),2)`;`r round(exp(hdi(res.jags.hcq.lowdose)[2]),2)`]
+- p-direction (OR > 1) : `r round(1-custom.pdir(res.jags.hcq.lowdose[[1]][,1],log(1)),2)`
+- p-direction (OR > 0.9) : `r round(1-custom.pdir(res.jags.hcq.lowdose[[1]][,1],log(0.9)),2)`
+
+# Analyse de sensibilité
+
+On modifie les paramètres a priori :
+
+- $\mu \sim \mathcal{N}(0,4)$, $\sigma^2 \sim \mathcal{U}(0,4)$ (modèle initial)
+- $\mu \sim \mathcal{N}(0,1)$, $\sigma^2 \sim \mathcal{U}(0,4)$ (modèle MT)
+- $\mu \sim \mathcal{N}(0,100)$, $\sigma^2 \sim \mathcal{U}(0,4)$ (modèle ML)
+- $\mu \sim \mathcal{N}(0,4)$, $\sigma^2 \sim \mathcal{U}(0,1)$ (modèle ST)
+- $\mu \sim \mathcal{N}(0,4)$, $\sigma^2 \sim \mathcal{U}(0,100)$ (modèle SL)
+
+```{r sensitivity include = F}
+model.hcq.all.mt = custom.jagsmodel(df.hcq, model = "modelMT.txt")
+
+res.jags.hcq.all.mt = coda.samples(model = model.hcq.all.mt,
+                                  variable.names = c("mu",
+                                                     "tau"),
+                                  n.iter = 1000000,
+                                thin=500)
+
+#Exclusion de la phase de chauffe
+res.jags.hcq.all.mt = window(res.jags.hcq.all.mt,start = 10001)
+
+model.hcq.all.ml = custom.jagsmodel(df.hcq, model = "modelML.txt")
+
+res.jags.hcq.all.ml = coda.samples(model = model.hcq.all.ml,
+                                  variable.names = c("mu",
+                                                     "tau"),
+                                  n.iter = 1000000,
+                                thin=500)
+
+#Exclusion de la phase de chauffe
+res.jags.hcq.all.ml = window(res.jags.hcq.all.ml,start = 10001)
+
+model.hcq.all.st = custom.jagsmodel(df.hcq, model = "modelST.txt")
+
+res.jags.hcq.all.st = coda.samples(model = model.hcq.all.st,
+                                  variable.names = c("mu",
+                                                     "tau"),
+                                  n.iter = 1000000,
+                                thin=500)
+
+#Exclusion de la phase de chauffe
+res.jags.hcq.all.st = window(res.jags.hcq.all.st,start = 10001)
+
+model.hcq.all.sl = custom.jagsmodel(df.hcq, model = "modelSL.txt")
+
+res.jags.hcq.all.sl = coda.samples(model = model.hcq.all.sl,
+                                  variable.names = c("mu",
+                                                     "tau"),
+                                  n.iter = 1000000,
+                                thin=500)
+
+#Exclusion de la phase de chauffe
+res.jags.hcq.all.sl = window(res.jags.hcq.all.sl,start = 10001)
+
+model.hcq.all.ib11 = custom.jagsmodel(df.hcq, model = "modelIB11.txt")
+
+res.jags.hcq.all.ib11 = coda.samples(model = model.hcq.all.ib11,
+                                  variable.names = c("mu",
+                                                     "tau"),
+                                  n.iter = 1000000,
+                                thin=500)
+
+#Exclusion de la phase de chauffe
+res.jags.hcq.all.ib11 = window(res.jags.hcq.all.ib11,start = 10001)
+
+model.hcq.all.ib44 = custom.jagsmodel(df.hcq, model = "modelIB44.txt")
+
+res.jags.hcq.all.ib44 = coda.samples(model = model.hcq.all.ib44,
+                                  variable.names = c("mu",
+                                                     "tau"),
+                                  n.iter = 1000000,
+                                thin=500)
+
+#Exclusion de la phase de chauffe
+res.jags.hcq.all.ib44 = window(res.jags.hcq.all.ib44,start = 10001)
+
+model.hcq.all.ib025025 = custom.jagsmodel(df.hcq, model = "modelIB025025.txt")
+
+res.jags.hcq.all.ib025025 = coda.samples(model = model.hcq.all.ib025025,
+                                  variable.names = c("mu",
+                                                     "tau"),
+                                  n.iter = 1000000,
+                                thin=500)
+
+#Exclusion de la phase de chauffe
+res.jags.hcq.all.ib025025 = window(res.jags.hcq.all.ib025025,start = 10001)
+```
+
+# Analyse de sensibilité : *hyperpriors*
+
+Médianes a posteriori :   
+
+- modèle initial : `r round(exp(summary(res.jags.hcq.all)[[2]][5]),4)` [`r round(exp(hdi(res.jags.hcq.all)[1]),2)`;`r round(exp(hdi(res.jags.hcq.all)[2]),2)`]
+- modèle MT : `r round(exp(summary(res.jags.hcq.all.mt)[[2]][5]),4)` [`r round(exp(hdi(res.jags.hcq.all.mt)[1]),2)`;`r round(exp(hdi(res.jags.hcq.all.mt)[2]),2)`]
+- modèle ML : `r round(exp(summary(res.jags.hcq.all.ml)[[2]][5]),4)` [`r round(exp(hdi(res.jags.hcq.all.ml)[1]),2)`;`r round(exp(hdi(res.jags.hcq.all.ml)[2]),2)`]
+- modèle ST : `r round(exp(summary(res.jags.hcq.all.st)[[2]][5]),4)` [`r round(exp(hdi(res.jags.hcq.all.st)[1]),2)`;`r round(exp(hdi(res.jags.hcq.all.st)[2]),2)`]
+- modèle SL : `r round(exp(summary(res.jags.hcq.all.sl)[[2]][5]),4)` [`r round(exp(hdi(res.jags.hcq.all.sl)[1]),2)`;`r round(exp(hdi(res.jags.hcq.all.sl)[2]),2)`]
+
+# Analyse de sensibilité : *Distributions du paramètre de dispersion de groupe: beta inverse*
+
+- modèle initial : `r round(exp(summary(res.jags.hcq.all)[[2]][5]),4)` [`r round(exp(hdi(res.jags.hcq.all)[1]),2)`;`r round(exp(hdi(res.jags.hcq.all)[2]),2)`]
+- modèle $\sim \mathcal{B}^{-1}(1,1)$ : `r round(exp(summary(res.jags.hcq.all.ib11)[[2]][5]),4)` [`r round(exp(hdi(res.jags.hcq.all.ib11)[1]),2)`;`r round(exp(hdi(res.jags.hcq.all.ib11)[2]),2)`]
+- modèle $\sim \mathcal{B}^{-1}(4,4)$ : `r round(exp(summary(res.jags.hcq.all.ib44)[[2]][5]),4)` [`r round(exp(hdi(res.jags.hcq.all.ib44)[1]),2)`;`r round(exp(hdi(res.jags.hcq.all.ib44)[2]),2)`]
+- modèle $\sim \mathcal{B}^{-1}(0.25,0.25)$ : `r round(exp(summary(res.jags.hcq.all.ib025025)[[2]][5]),4)` [`r round(exp(hdi(res.jags.hcq.all.ib025025)[1]),2)`;`r round(exp(hdi(res.jags.hcq.all.ib025025)[2]),2)`]
+
+# Discussion
+
+- l'interprétation des p-valeurs et des intervalles de crédibilité ne permet pas d'exclure avec une forte probabilité un effet sur de l'hydroxychloroquine sur la mortalité
+- l'augmentation de l'intervalle de crédibilité dans les méta-analyses bayésiennes comparativement aux intervalles de confiances a été décrit par certains auteurs [@seideComparisonBayesianFrequentist2020]
+- Les études de sensibilité ne montrent pas d'effet sensible du choix du type ou de la valeur des hyperparamètres des distributions des paramètres *a priori*
+
+# Conclusion
+
+- La méta-analyse bayésienne montre un effet de même direction mais de magnitude moins importante que l'analyse fréquentiste
+- la p-direction faible pour un OR < 0.9 est en faveur d'un effet au mieux modeste de l'hydroxychloroquine sur la mortalité
+- il ne semble pas y avoir de différence sensible en analyse en sous-groupes en fonction de la dose ou entre études publiées ou non
+
+# Références
+
+<div id="refs"></div>
