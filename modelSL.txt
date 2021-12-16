@@ -1,0 +1,18 @@
+model{
+#Echantillonnage
+  for(i in 1:N){
+    logOR[i]~dnorm(theta[i],precision.logOR[i])
+    theta[i]~dnorm(mu,precision.tau)
+  }
+
+#Prior
+  mu~dnorm(0,0.0625)
+  tau~dunif(0,100)
+
+#Reparamétrisation
+  for(i in 1:N){
+    precision.logOR[i] = pow(sigma[i],-2)
+  }
+
+  precision.tau = pow(tau,-2)
+}
