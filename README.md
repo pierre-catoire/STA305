@@ -1,4 +1,4 @@
-# Méta-analyse bayésienne de l'efficacité de l'hydroxychloroquine dans le COVID-19 : STA305 🎓
+# 🎓 Méta-analyse bayésienne de l'efficacité de l'hydroxychloroquine dans le COVID-19 : STA305
 
 *Auteurs : Fourmond M, Mukakalisa C, Catoire P*
 
@@ -6,7 +6,7 @@
 
 <p align="center">
   <b>
-Evaluer par une approche bayésienne l'effet de l'hydroxychloroquine sur le risque de décès parmi les patients atteints de COVID-19, à partir des données de Axfors et al. 💊[1]
+Evaluer par une approche bayésienne l'effet de l'hydroxychloroquine 💊 sur le risque de décès parmi les patients atteints de COVID-19, à partir des données de Axfors et al. 📄
   </b>
 </p>
 
@@ -26,7 +26,7 @@ Sont extrait de l'article initial les résultats de 34 études, publiées ou en 
  
 ## 🧮 Analyse 
 
-### 📘 Modèle :
+### 📈 Modèle :
 
 Le modèle bayésien est défini par :
 
@@ -63,3 +63,7 @@ Le modèle bayésien est défini par :
 - HDInterval
 - coda
 - metafor
+
+### 📘 Références
+
+Axfors, Cathrine, Andreas M. Schmitt, Perrine Janiaud, Janneke van’t Hooft, Sherief Abd-Elsalam, Ehab F. Abdo, Benjamin S. Abella, et al. 2021. “Mortality Outcomes with Hydroxychloroquine and Chloroquine in COVID-19 from an International Collaborative Meta-Analysis of Randomized Trials.” Nature Communications 12 (1): 2349. https://doi.org/10.1038/s41467-021-22446-z.
