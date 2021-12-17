@@ -496,6 +496,8 @@ Médianes a posteriori :
 - la p-direction faible pour un OR < 0.9 est en faveur d'un effet au mieux modeste de l'hydroxychloroquine sur la mortalité
 - il ne semble pas y avoir de différence sensible en analyse en sous-groupes en fonction de la dose
 
-# Références
+# Merci !
+
+**Références ** :
 
 <div id="refs"></div>
