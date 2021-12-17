@@ -169,30 +169,22 @@ $$
 \mathbb{P}(\mu|Y) = \int^{\mathbb{R}}\mathbb{P}(\mu,\theta|Y) d\theta \propto \int^{\mathbb{R}}\mathbb{P}(Y | \mu,\theta)\times\mathbb{P}(\theta|\mu)\times\mathbb{P}(\mu) d\theta
 $$
 
-#
-
-avec :
-
-- $\mathbb{P}(Y|\mu,\theta) = \underset{i=1}{\overset{k}{\prod}}\Bigg[\frac{1}{\sqrt{2\pi\sigma_i^2}}e^{-\frac{(Y_i-\theta)^2}{2\sigma_i^2}}\Bigg]$
-- $\mathbb{P}(\mu) = \frac{1}{\sqrt{2\pi}}e^{-\frac{1}{2}\mu^2}$
-- et :
+On obtient (cf. demo.pdf sur github) :
 
 $$
-\mathbb{P}(\theta|\mu) = \mathbb{P}(\mu|\theta)\frac{\mathbb{P}(\theta)}{\mathbb{P}(\mu)}
+\mathbb{P}(\mu|\theta) =
+\int^\Theta \frac{
+\mathbb{P}(\mu) \int_0^4
+\frac{1}{\sqrt{2\pi\sigma^2}}e^{-\frac{1}{2 \sigma^2}(\theta_i-\mu)^2}
+\frac{1}{4}\mathbb{1}_{\sigma^2 \in [0;4]}
+d\sigma^2
+}
+{\int^\Theta \int^\mu \int^{\sigma^2} \mathbb{P}(Y|\theta)
+\times \mathbb{P}(\theta|\mu,\sigma^2)
+\times \mathbb{P}(\mu)\times\mathbb{P}(\sigma^2) d\theta d\mu d\sigma^2 }
+\overset{k}{\underset{i=1}{\prod}}\Bigg[\frac{1}{\sqrt{2\pi\sigma_i^2}}e^{-\frac{1}{2 \sigma_i^2}(Y_i-\theta_i)^2}\Bigg] d\theta
 $$
 
-$$
-= \frac{\mathbb{P}(\theta)}{\mathbb{P}(\mu)}\int_0^4\mathbb{P}(\mu,\sigma^2|\theta)d\sigma^2
-$$
-
-$$
-= \frac{\mathbb{P}(\theta)}{\mathbb{P}(\mu)}\int_0^4\mathbb{P}(\theta|\mu,\sigma^2)\frac{\mathbb{P}(\mu)\mathbb{P}(\sigma^2)}{\mathbb{P}(\theta)}d\sigma^2
-$$
-
-
-$$
-= \int_0^4\mathbb{P}(\theta|\mu,\sigma^2)\times \mathbb{P}(\sigma^2)d\sigma^2
-$$
 
 
 # Modèle "naïf"
@@ -502,7 +494,8 @@ Médianes a posteriori :
 
 # Discussion
 
-- l'interprétation des p-valeurs et des intervalles de crédibilité ne permet pas d'exclure avec une forte probabilité un effet sur de l'hydroxychloroquine sur la mortalité
+- l'interprétation des p-directions et des intervalles de crédibilité ne permet pas d'exclure avec une forte probabilité un effet sur de l'hydroxychloroquine sur la mortalité
+- l'estimation du paramètre $\mu$ par la médiane a posteriori donne des valeurs en accord avec l'approche fréquentiste
 - l'augmentation de l'intervalle de crédibilité dans les méta-analyses bayésiennes comparativement aux intervalles de confiances a été décrit par certains auteurs [@seideComparisonBayesianFrequentist2020]
 - Les études de sensibilité ne montrent pas d'effet sensible du choix du type ou de la valeur des hyperparamètres des distributions des paramètres *a priori*
 - les études non publiées semblent plus en faveur d'une réduction de la mortalité par l'HCQ, mais avec de faibles effectifs influant peu sur le résultat global
