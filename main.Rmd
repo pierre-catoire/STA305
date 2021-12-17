@@ -98,7 +98,7 @@ custom.pdir = function(sample,value,way = "sup"){
 - Méta-analyse bayésienne à partir des données de @axforsMortalityOutcomesHydroxychloroquine2021.
 - détermination de :
   - l'effet global (OR) par médiane a posteriori
-  - Intervalle de crédence (méthode de plus haute densité)
+  - Intervalle de crédibilité (méthode de plus haute densité)
   - p-direction pour OR < 1 et OR < 0.9 (cliniquement pertinent)
 
 ## Analyses secondaires
