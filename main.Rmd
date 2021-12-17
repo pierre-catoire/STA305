@@ -266,9 +266,26 @@ res.jags.hcq.all = window(res.jags.hcq.all,start = burnin+1)
 
 *(Résultats de Axfors et al : 1.11 [1.02-1.20])*
 
-# Densités a posteriori
 
-```{r plot-overall-model, echo=FALSE}
+# P-direction
+
+```{r plot-overall-model-pdir, echo=FALSE}
+cols = c(rgb(90/256, 124/256, 154/256,0.5),
+         rgb(90/256, 124/256, 154/256,1))
+x = as.numeric(res.jags.hcq.all[[1]][,1])
+densx = density((x))
+plot(densx, main = "Probabilité a posteriori - log-odds ratio")
+polygon(c(0, densx$x[densx$x<log(1)],0), c(0, densx$y[densx$x<log(1)], 0),col=cols[1],border = "lightgrey")
+polygon(c(log(0.9), densx$x[densx$x<log(0.9)],log(0.9)), c(0, densx$y[densx$x<log(0.9)], 0),col=cols[2],border = "lightgrey")
+legend("topright", legend=c("p-dir(OR < 1)", "p-dir(OR < 0.9)"),
+       fill=cols)
+abline(v=log(1))
+abline(v=log(0.9))
+```
+
+# Densités a posteriori, trace
+
+```{r plot-overall-model, echo =F}
 plot(res.jags.hcq.all)
 ```
 
