@@ -64,6 +64,12 @@ Le modèle bayésien est défini par :
 - coda
 - metafor
 
+### 📎 Documents
+
+- Code : `main.Rmd`
+- Diaporama : `slides305.pdf`
+- Démonstration analytique : `demo.md` et `demo.pdf`
+
 ### 📘 Références
 
 Axfors, Cathrine, Andreas M. Schmitt, Perrine Janiaud, Janneke van’t Hooft, Sherief Abd-Elsalam, Ehab F. Abdo, Benjamin S. Abella, et al. 2021. “Mortality Outcomes with Hydroxychloroquine and Chloroquine in COVID-19 from an International Collaborative Meta-Analysis of Randomized Trials.” Nature Communications 12 (1): 2349. https://doi.org/10.1038/s41467-021-22446-z.
